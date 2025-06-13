@@ -1,0 +1,351 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frecuencia de Establecimientos Educacionales</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        select, button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #34495e;
+            color: white;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #e8f4f8;
+        }
+        .comuna-buin { background-color: #fff3cd !important; }
+        .comuna-lampa { background-color: #d1ecf1 !important; }
+        .comuna-santiago { background-color: #fdecea !important; }
+        .comuna-providencia { background-color: #eafaf1 !important; }
+        .comuna-penalolen { background-color: #fff0f5 !important; }
+        .comuna-lascondes { background-color: #e8e8f8 !important; }
+        .frecuencia {
+            font-weight: bold;
+            text-align: center;
+            color: #2c3e50;
+        }
+        .niveles-educativos {
+            max-width: 400px;
+            word-wrap: break-word;
+        }
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .stat-item {
+            text-align: center;
+            margin: 10px;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Frecuencia de Establecimientos Educacionales por Niveles</h1>
+        <div class="stats">
+            <div class="stat-item"><div class="stat-number" id="totalBuin">0</div><div class="stat-label">Total Buín</div></div>
+            <div class="stat-item"><div class="stat-number" id="totalLampa">0</div><div class="stat-label">Total Lampa</div></div>
+            <div class="stat-item"><div class="stat-number" id="totalSantiago">0</div><div class="stat-label">Total Santiago</div></div>
+            <div class="stat-item"><div class="stat-number" id="totalProvidencia">0</div><div class="stat-label">Total Providencia</div></div>
+            <div class="stat-item"><div class="stat-number" id="totalPenalolen">0</div><div class="stat-label">Total Peñalolén</div></div>
+            <div class="stat-item"><div class="stat-number" id="totalLasCondes">0</div><div class="stat-label">Total Las Condes</div></div>
+            <div class="stat-item"><div class="stat-number" id="totalGeneral">0</div><div class="stat-label">Total General</div></div>
+        </div>
+        <div class="controls">
+            <label>Filtrar por comuna:</label>
+            <select id="filtroComuna">
+                <option value="todas">Todas las comunas</option>
+                <option value="BUIN">Buín</option>
+                <option value="LAMPA">Lampa</option>
+                <option value="SANTIAGO">Santiago</option>
+                <option value="PROVIDENCIA">Providencia</option>
+                <option value="PEÑALOLÉN">Peñalolén</option>
+                <option value="LAS CONDES">Las Condes</option>
+            </select>
+            <label>Ordenar por:</label>
+            <select id="ordenar">
+                <option value="frecuencia-desc">Frecuencia (Mayor a Menor)</option>
+                <option value="frecuencia-asc">Frecuencia (Menor a Mayor)</option>
+                <option value="comuna">Comuna</option>
+                <option value="niveles">Niveles Educativos</option>
+            </select>
+            <button onclick="exportarCSV()">Exportar CSV</button>
+        </div>
+        <table id="tablaEstablecimientos">
+            <thead>
+                <tr>
+                    <th>Comuna</th>
+                    <th>Niveles Educativos Impartidos</th>
+                    <th>Frecuencia</th>
+                </tr>
+            </thead>
+            <tbody id="tablaBody"></tbody>
+        </table>
+    </div>
+
+<script>
+const datosOriginales = [
+    {comuna: "BUIN", niveles: "0", frecuencia: 7},
+    {comuna: "BUIN", niveles: "216", frecuencia: 1},
+    {comuna: "BUIN", niveles: "Educacion Basica Adultos sin oficio - Educacion Media HC Adultos", frecuencia: 1},
+    {comuna: "BUIN", niveles: "Educacion Especial Discapacidad Intelectual", frecuencia: 2},
+    {comuna: "BUIN", niveles: "Educacion Especial Transtornos Especificos del Lenguaje", frecuencia: 9},
+    {comuna: "BUIN", niveles: "Educacion Parvularia - Educacion Especial Transtornos Especificos del Lenguaje", frecuencia: 1},
+    {comuna: "BUIN", niveles: "Educacion Parvularia - Enseñanza Basica", frecuencia: 8},
+    {comuna: "BUIN", niveles: "Educacion Parvularia - Enseñanza Basica - Educacion Basica Adultos sin oficio - Media HC ninos y jovenes - Educacion Media HC Adultos", frecuencia: 1},
+    {comuna: "BUIN", niveles: "Educacion Parvularia - Enseñanza Basica - Educacion Especial Transtornos Especificos del Lenguaje", frecuencia: 4},
+    {comuna: "BUIN", niveles: "Educacion Parvularia - Enseñanza Basica - Media HC ninos y jovenes", frecuencia: 13},
+    {comuna: "BUIN", niveles: "Educacion Parvularia - Enseñanza Basica - Media HC ninos y jovenes - Media TP comercial ninos y jovenes - Media TP industrial  ninos y jovenes - Media TP tecnica  ninos y jovenes", frecuencia: 1},
+    {comuna: "BUIN", niveles: "Educacion Parvularia - Enseñanza Basica - Media HC ninos y jovenes - Media TP tecnica  ninos y jovenes", frecuencia: 1},
+    {comuna: "BUIN", niveles: "Enseñanza Basica", frecuencia: 1},
+    {comuna: "BUIN", niveles: "Enseñanza Basica - Educacion Especial Transtornos Especificos del Lenguaje", frecuencia: 1},
+    {comuna: "BUIN", niveles: "Enseñanza Basica - Media HC ninos y jovenes", frecuencia: 2},
+    {comuna: "BUIN", niveles: "Media HC ninos y jovenes - 71", frecuencia: 1},
+    {comuna: "BUIN", niveles: "Media HC ninos y jovenes - Media TP comercial ninos y jovenes - 463 - Media TP industrial  ninos y jovenes - Educación Media T-P Industrial Adultos (Decreto N° 1000/2009)", frecuencia: 1},
+    {comuna: "LAMPA", niveles: "0", frecuencia: 3},
+    {comuna: "LAMPA", niveles: "Educacion Basica Adultos sin oficio - Educacion Media HC Adultos", frecuencia: 2},
+    {comuna: "LAMPA", niveles: "Educacion Especial Discapacidad Intelectual", frecuencia: 2},
+    {comuna: "LAMPA", niveles: "Educacion Especial Discapacidad Intelectual - Educacion Especial Transtornos Especificos del Lenguaje", frecuencia: 2},
+    {comuna: "LAMPA", niveles: "Educacion Especial Transtornos Especificos del Lenguaje", frecuencia: 14},
+    {comuna: "LAMPA", niveles: "Educacion Parvularia", frecuencia: 1},
+    {comuna: "LAMPA", niveles: "Educacion Parvularia - Enseñanza Basica", frecuencia: 17},
+    {comuna: "LAMPA", niveles: "Educacion Parvularia - Enseñanza Basica - Educacion Basica Adultos sin oficio", frecuencia: 1},
+    {comuna: "LAMPA", niveles: "Educacion Parvularia - Enseñanza Basica - Educacion Especial Transtornos Especificos del Lenguaje", frecuencia: 1},
+    {comuna: "LAMPA", niveles: "Educacion Parvularia - Enseñanza Basica - Educacion Media HC Adultos", frecuencia: 2},
+    {comuna: "LAMPA", niveles: "Educacion Parvularia - Enseñanza Basica - Media HC ninos y jovenes", frecuencia: 9},
+    {comuna: "LAMPA", niveles: "Educacion Parvularia - Enseñanza Basica - Media HC ninos y jovenes - Media TP comercial ninos y jovenes", frecuencia: 1},
+    {comuna: "LAMPA", niveles: "Enseñanza Basica", frecuencia: 1},
+    {comuna: "LAMPA", niveles: "Enseñanza Basica - Educacion Especial Transtornos Especificos del Lenguaje", frecuencia: 1},
+    {comuna: "LAMPA", niveles: "Enseñanza Basica - Media HC ninos y jovenes", frecuencia: 1},
+    {comuna: "LAMPA", niveles: "Enseñanza Basica - Media HC ninos y jovenes - Media TP comercial ninos y jovenes", frecuencia: 1},
+    {comuna: "LAMPA", niveles: "Media HC ninos y jovenes - Educacion Media HC Adultos - Media TP comercial ninos y jovenes - Media TP industrial  ninos y jovenes - Media TP tecnica  ninos y jovenes", frecuencia: 1},
+    {comuna: "LAS CONDES", niveles: "0", frecuencia: 44},
+    {comuna: "LAS CONDES", niveles: "Educacion Especial Discapacidad Intelectual", frecuencia: 1},
+    {comuna: "LAS CONDES", niveles: "Educacion Especial Transtornos Especificos del Lenguaje", frecuencia: 4},
+    {comuna: "LAS CONDES", niveles: "Educacion Parvularia", frecuencia: 2},
+    {comuna: "LAS CONDES", niveles: "Educacion Parvularia - Enseñanza Basica", frecuencia: 2},
+    {comuna: "LAS CONDES", niveles: "Educacion Parvularia - Enseñanza Basica - Educacion Basica Adultos sin oficio - Media HC ninos y jovenes - Educacion Media HC Adultos - Media TP comercial ninos y jovenes - Media TP industrial  ninos y jovenes", frecuencia: 1},
+    {comuna: "LAS CONDES", niveles: "Educacion Parvularia - Enseñanza Basica - Media HC ninos y jovenes", frecuencia: 36},
+    {comuna: "LAS CONDES", niveles: "Enseñanza Basica - Media HC ninos y jovenes", frecuencia: 10},
+    {comuna: "LAS CONDES", niveles: "Enseñanza Basica - Media HC ninos y jovenes - Educacion Media HC Adultos", frecuencia: 1},
+    {comuna: "LAS CONDES", niveles: "Media HC ninos y jovenes - Educacion Media HC Adultos", frecuencia: 1},
+    {comuna: "LAS CONDES", niveles: "Media TP tecnica  ninos y jovenes", frecuencia: 1},
+    {comuna: "PEÑALOLÉN", niveles: "0", frecuencia: 14},
+    {comuna: "PEÑALOLÉN", niveles: "Educacion Basica Adultos sin oficio - Educacion Basica Adultos con oficio - Educacion Media HC Adultos", frecuencia: 1},
+    {comuna: "PEÑALOLÉN", niveles: "Educacion Especial Discapacidad Intelectual", frecuencia: 1},
+    {comuna: "PEÑALOLÉN", niveles: "Educacion Especial Discapacidad Intelectual - Educacion Especial Transtornos Especificos del Lenguaje", frecuencia: 2},
+    {comuna: "PEÑALOLÉN", niveles: "Educacion Especial Transtornos Especificos del Lenguaje", frecuencia: 10},
+    {comuna: "PEÑALOLÉN", niveles: "Educacion Media HC Adultos", frecuencia: 3},
+    {comuna: "PEÑALOLÉN", niveles: "Educacion Parvularia - Enseñanza Basica", frecuencia: 11},
+    {comuna: "PEÑALOLÉN", niveles: "Educacion Parvularia - Enseñanza Basica - 299 - Media HC ninos y jovenes - Media TP comercial ninos y jovenes - Media TP industrial  ninos y jovenes", frecuencia: 1},
+    {comuna: "PEÑALOLÉN", niveles: "Educacion Parvularia - Enseñanza Basica - Educacion Basica Adultos sin oficio - Educacion Media HC Adultos", frecuencia: 4},
+    {comuna: "PEÑALOLÉN", niveles: "Educacion Parvularia - Enseñanza Basica - Educacion Media HC Adultos", frecuencia: 2},
+    {comuna: "PEÑALOLÉN", niveles: "Educacion Parvularia - Enseñanza Basica - Media HC ninos y jovenes", frecuencia: 23},
+    {comuna: "PEÑALOLÉN", niveles: "Educacion Parvularia - Enseñanza Basica - Media HC ninos y jovenes - Media TP comercial ninos y jovenes - Media TP industrial  ninos y jovenes", frecuencia: 2},
+    {comuna: "PEÑALOLÉN", niveles: "Educacion Parvularia - Enseñanza Basica - Media HC ninos y jovenes - Media TP tecnica  ninos y jovenes", frecuencia: 2},
+    {comuna: "PEÑALOLÉN", niveles: "Educacion Parvularia - Enseñanza Basica - Media TP comercial ninos y jovenes", frecuencia: 1},
+    {comuna: "PEÑALOLÉN", niveles: "Enseñanza Basica - Educacion Media HC Adultos", frecuencia: 1},
+    {comuna: "PEÑALOLÉN", niveles: "Enseñanza Basica - Media HC ninos y jovenes", frecuencia: 5},
+    {comuna: "PROVIDENCIA", niveles: "0", frecuencia: 37},
+    {comuna: "PROVIDENCIA", niveles: "Educacion Basica Adultos sin oficio - Educacion Media HC Adultos", frecuencia: 1},
+    {comuna: "PROVIDENCIA", niveles: "Educacion Especial Transtornos Especificos del Lenguaje", frecuencia: 2},
+    {comuna: "PROVIDENCIA", niveles: "Educacion Media HC Adultos", frecuencia: 2},
+    {comuna: "PROVIDENCIA", niveles: "Educacion Parvularia", frecuencia: 2},
+    {comuna: "PROVIDENCIA", niveles: "Educacion Parvularia - Enseñanza Basica", frecuencia: 3},
+    {comuna: "PROVIDENCIA", niveles: "Educacion Parvularia - Enseñanza Basica - Media HC ninos y jovenes", frecuencia: 23},
+    {comuna: "PROVIDENCIA", niveles: "Educacion Parvularia - Enseñanza Basica - Media HC ninos y jovenes - Educacion Media HC Adultos", frecuencia: 1},
+    {comuna: "PROVIDENCIA", niveles: "Enseñanza Basica", frecuencia: 1},
+    {comuna: "PROVIDENCIA", niveles: "Enseñanza Basica - Media HC ninos y jovenes", frecuencia: 5},
+    {comuna: "PROVIDENCIA", niveles: "Enseñanza Basica - Media HC ninos y jovenes - Media TP comercial ninos y jovenes - Media TP tecnica  ninos y jovenes", frecuencia: 2},
+    {comuna: "PROVIDENCIA", niveles: "Enseñanza Basica - Media HC ninos y jovenes - Media TP tecnica  ninos y jovenes", frecuencia: 1},
+    {comuna: "PROVIDENCIA", niveles: "Media HC ninos y jovenes", frecuencia: 1},
+    {comuna: "SANTIAGO", niveles: "0", frecuencia: 33},
+    {comuna: "SANTIAGO", niveles: "218 - 219", frecuencia: 1},
+    {comuna: "SANTIAGO", niveles: "Educacion Basica Adultos con oficio - Educacion Media HC Adultos", frecuencia: 1},
+    {comuna: "SANTIAGO", niveles: "Educacion Basica Adultos sin oficio - Educacion Basica Adultos con oficio - Educacion Media HC Adultos", frecuencia: 1},
+    {comuna: "SANTIAGO", niveles: "Educacion Basica Adultos sin oficio - Educacion Media HC Adultos", frecuencia: 5},
+    {comuna: "SANTIAGO", niveles: "Educacion Especial Discapacidad Auditiva", frecuencia: 2},
+    {comuna: "SANTIAGO", niveles: "Educacion Especial Discapacidad Intelectual", frecuencia: 2},
+    {comuna: "SANTIAGO", niveles: "Educacion Especial Discapacidad Intelectual - Educacion Especial Transtornos Especificos del Lenguaje", frecuencia: 1},
+    {comuna: "SANTIAGO", niveles: "Educacion Especial Transtornos Especificos del Lenguaje", frecuencia: 5},
+    {comuna: "SANTIAGO", niveles: "Educacion Media HC Adultos", frecuencia: 5},
+    {comuna: "SANTIAGO", niveles: "Educacion Parvularia", frecuencia: 5},
+    {comuna: "SANTIAGO", niveles: "Educacion Parvularia - Educacion Especial Transtornos Especificos del Lenguaje", frecuencia: 1},
+    {comuna: "SANTIAGO", niveles: "Educacion Parvularia - Enseñanza Basica", frecuencia: 31},
+    {comuna: "SANTIAGO", niveles: "Educacion Parvularia - Enseñanza Basica - Media HC ninos y jovenes", frecuencia: 29},
+    {comuna: "SANTIAGO", niveles: "Enseñanza Basica", frecuencia: 3},
+    {comuna: "SANTIAGO", niveles: "Enseñanza Basica - Media HC ninos y jovenes", frecuencia: 15},
+    {comuna: "SANTIAGO", niveles: "Enseñanza Basica - Media HC ninos y jovenes - Educacion Media HC Adultos", frecuencia: 1},
+    {comuna: "SANTIAGO", niveles: "Enseñanza Basica - Media HC ninos y jovenes - Media TP comercial ninos y jovenes", frecuencia: 2},
+    {comuna: "SANTIAGO", niveles: "Enseñanza Basica - Media HC ninos y jovenes - Media TP comercial ninos y jovenes - Media TP tecnica  ninos y jovenes", frecuencia: 1},
+    {comuna: "SANTIAGO", niveles: "Enseñanza Basica - Media HC ninos y jovenes - Media TP industrial  ninos y jovenes", frecuencia: 2},
+    {comuna: "SANTIAGO", niveles: "Media HC ninos y jovenes", frecuencia: 4},
+    {comuna: "SANTIAGO", niveles: "Media HC ninos y jovenes - Educacion Media HC Adultos - Media TP comercial ninos y jovenes", frecuencia: 1},
+    {comuna: "SANTIAGO", niveles: "Media HC ninos y jovenes - Media TP comercial ninos y jovenes", frecuencia: 1},
+    {comuna: "SANTIAGO", niveles: "Media HC ninos y jovenes - Media TP comercial ninos y jovenes - Media TP industrial  ninos y jovenes", frecuencia: 1},
+    {comuna: "SANTIAGO", niveles: "Media HC ninos y jovenes - Media TP comercial ninos y jovenes - Media TP tecnica  ninos y jovenes", frecuencia: 1},
+    {comuna: "SANTIAGO", niveles: "Media HC ninos y jovenes - Media TP industrial  ninos y jovenes", frecuencia: 3},
+    {comuna: "SANTIAGO", niveles: "Media HC ninos y jovenes - Media TP industrial  ninos y jovenes - 71", frecuencia: 1},
+    {comuna: "SANTIAGO", niveles: "Media HC ninos y jovenes - Media TP tecnica  ninos y jovenes", frecuencia: 2},
+    {comuna: "SANTIAGO", niveles: "Media TP comercial ninos y jovenes - Media TP tecnica  ninos y jovenes", frecuencia: 1},
+];
+
+let datosFiltrados = [...datosOriginales];
+
+function actualizarEstadisticas() {
+    const totalBuin = datosOriginales.filter(d => d.comuna === 'BUIN').reduce((sum, d) => sum + d.frecuencia, 0);
+    const totalLampa = datosOriginales.filter(d => d.comuna === 'LAMPA').reduce((sum, d) => sum + d.frecuencia, 0);
+    const totalSantiago = datosOriginales.filter(d => d.comuna === 'SANTIAGO').reduce((sum, d) => sum + d.frecuencia, 0);
+    const totalProvidencia = datosOriginales.filter(d => d.comuna === 'PROVIDENCIA').reduce((sum, d) => sum + d.frecuencia, 0);
+    const totalPenalolen = datosOriginales.filter(d => d.comuna === 'PEÑALOLÉN').reduce((sum, d) => sum + d.frecuencia, 0);
+    const totalLasCondes = datosOriginales.filter(d => d.comuna === 'LAS CONDES').reduce((sum, d) => sum + d.frecuencia, 0);
+
+    const totalGeneral = totalBuin + totalLampa + totalSantiago + totalProvidencia + totalPenalolen + totalLasCondes;
+
+    document.getElementById('totalBuin').textContent = totalBuin;
+    document.getElementById('totalLampa').textContent = totalLampa;
+    document.getElementById('totalSantiago').textContent = totalSantiago;
+    document.getElementById('totalProvidencia').textContent = totalProvidencia;
+    document.getElementById('totalPenalolen').textContent = totalPenalolen;
+    document.getElementById('totalLasCondes').textContent = totalLasCondes;
+    document.getElementById('totalGeneral').textContent = totalGeneral;
+}
+
+function renderizarTabla() {
+    const tbody = document.getElementById('tablaBody');
+    tbody.innerHTML = '';
+    const clase = {
+        'BUIN': 'comuna-buin',
+        'LAMPA': 'comuna-lampa',
+        'SANTIAGO': 'comuna-santiago',
+        'PROVIDENCIA': 'comuna-providencia',
+        'PEÑALOLÉN': 'comuna-penalolen',
+        'LAS CONDES': 'comuna-lascondes'
+    };
+    datosFiltrados.forEach(registro => {
+        const fila = document.createElement('tr');
+        fila.className = clase[registro.comuna] || '';
+        fila.innerHTML = `
+            <td><strong>${registro.comuna}</strong></td>
+            <td class="niveles-educativos">${registro.niveles}</td>
+            <td class="frecuencia">${registro.frecuencia}</td>
+        `;
+        tbody.appendChild(fila);
+    });
+}
+
+function filtrarYOrdenar() {
+    const filtroComuna = document.getElementById('filtroComuna').value;
+    const ordenamiento = document.getElementById('ordenar').value;
+
+    datosFiltrados = filtroComuna === 'todas'
+        ? [...datosOriginales]
+        : datosOriginales.filter(d => d.comuna === filtroComuna);
+
+    switch (ordenamiento) {
+        case 'frecuencia-desc':
+            datosFiltrados.sort((a, b) => b.frecuencia - a.frecuencia); break;
+        case 'frecuencia-asc':
+            datosFiltrados.sort((a, b) => a.frecuencia - b.frecuencia); break;
+        case 'comuna':
+            datosFiltrados.sort((a, b) => a.comuna.localeCompare(b.comuna)); break;
+        case 'niveles':
+            datosFiltrados.sort((a, b) => a.niveles.localeCompare(b.niveles)); break;
+    }
+    renderizarTabla();
+}
+
+function exportarCSV() {
+    let csv = 'Comuna,Niveles Educativos,Frecuencia\n';
+    datosFiltrados.forEach(r => {
+        csv += `"\${r.comuna}","\${r.niveles}",\${r.frecuencia}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'establecimientos_educacionales.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+document.getElementById('filtroComuna').addEventListener('change', filtrarYOrdenar);
+document.getElementById('ordenar').addEventListener('change', filtrarYOrdenar);
+actualizarEstadisticas();
+filtrarYOrdenar();
+</script>
+
+</body>
+</html>
